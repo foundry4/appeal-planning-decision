@@ -44,46 +44,6 @@ const isFormFullyBlank = (rawErrorSummary) => {
   return matchingTexts.length >= 3;
 };
 
-const populateErrorSummary = (rawErrorSummary) => {
-  return rawErrorSummary.map((error) => {
-    if (error.href === '#files.documents[0]')
-      return {
-        href: '#documents',
-        text: error.text,
-      };
-    if (error.href === '#adoptedDate')
-      return {
-        href: '#adoptedDate-day',
-        text: error.text,
-      };
-    return error;
-  });
-};
-
-const isAdoptedAndDateBlank = (errorSummary) => {
-  const errorSummaryTexts = errorSummary.map((obj) => obj.text);
-
-  const matchingTexts = Object.values(errorTexts.dateErrorTexts).filter((vm) =>
-    errorSummaryTexts.includes(vm)
-  );
-
-  return matchingTexts.length >= 3;
-};
-
-const createErrorSummary = (rawErrorSummary) => {
-  let errorSummary = populateErrorSummary(rawErrorSummary);
-
-  if (isAdoptedAndDateBlank(errorSummary)) {
-    errorSummary = errorSummary.filter(
-      (err) =>
-        err.text !== errorTexts.dateErrorTexts.monthYear &&
-        err.text !== errorTexts.dateErrorTexts.month
-    );
-  }
-
-  return errorSummary;
-};
-
 exports.postAddDocument = async (req, res) => {
   const backLink = res.locals.backLink || req.session.backLink;
 
@@ -117,9 +77,24 @@ exports.postAddDocument = async (req, res) => {
     stageReached,
   };
 
-  const errorSummary = createErrorSummary(rawErrorSummary);
+  console.log(rawErrorSummary);
 
-  const errors = renameDocErrorKeys(rawErrors);
+  let latestText = '';
+  let errorSummary = [];
+  rawErrorSummary.forEach((e) => {
+    if (e.text === latestText) {
+      errorSummary.push({ text: '', href: e.href });
+    } else {
+      errorSummary.push({ text: e.text, href: e.href });
+    }
+    latestText = e.text;
+  });
+
+  errorSummary = errorSummary.filter((e) => e.text !== '');
+
+  let errors = renameDocErrorKeys(rawErrors);
+
+  if (errorSummary.length < 1) errors = [];
 
   try {
     if (Object.keys(errors).length > 0) throw new Error('Validation failed');

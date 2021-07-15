@@ -2,14 +2,6 @@ const { body } = require('express-validator');
 const { isLeapYear } = require('date-fns');
 const { capitalize } = require('../../lib/string-functions');
 
-function getDateObject(inputRef) {
-  return {
-    d: `${inputRef}-day`,
-    m: `${inputRef}-month`,
-    y: `${inputRef}-year`,
-  };
-}
-
 function dateNumValid(dateNum, min, max) {
   if (dateNum === '') return true;
   const parsedDateNum = parseInt(dateNum, 10);
@@ -78,11 +70,30 @@ function createValidationErrors(date, req, inputLabel) {
 // function skipped as req is passed implicitly and impossible / very difficult to mock
 /* istanbul ignore next */
 function defaultExport(inputRef, inputLabel = () => true) {
+  const date = {
+    d: `${inputRef}-day`,
+    m: `${inputRef}-month`,
+    y: `${inputRef}-year`,
+  };
+
   return [
-    body(getDateObject(inputRef))
-      .notEmpty()
+    body(date.d)
+      .not()
+      .exists()
       .withMessage((_, { req }) => {
-        return createValidationErrors(getDateObject(inputRef), req, inputLabel);
+        return createValidationErrors(date, req, inputLabel);
+      }),
+    body(date.m)
+      .not()
+      .exists()
+      .withMessage((_, { req }) => {
+        return createValidationErrors(date, req, inputLabel);
+      }),
+    body(date.y)
+      .not()
+      .exists()
+      .withMessage((_, { req }) => {
+        return createValidationErrors(date, req, inputLabel);
       }),
   ];
 }
